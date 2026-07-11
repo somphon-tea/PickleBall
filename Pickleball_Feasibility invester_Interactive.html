@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<title>Pickleball Court - Interactive Feasibility Model (Rate x Hours x Courts)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;700;800&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  :root{
+    --brand-primary:#0F766E; --brand-secondary:#14B8A6; --brand-accent:#5EEAD4; --brand-light:#F0FDFA;
+    --ink:#0B3B36; --warn-bg:#FFF7E6; --warn-border:#F5B942; --neg:#C0392B;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Noto Sans Thai','Inter',sans-serif;background:linear-gradient(180deg,var(--brand-light) 0%,#ffffff 320px);color:var(--ink);padding:32px 20px 60px;}
+  .wrap{max-width:1220px;margin:0 auto;}
+  .hero{background:linear-gradient(135deg,var(--brand-primary),var(--brand-secondary));border-radius:20px;padding:26px 30px;color:#fff;box-shadow:0 12px 30px rgba(15,118,110,.25);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;}
+  .hero .tag{display:inline-block;background:rgba(255,255,255,.18);padding:4px 12px;border-radius:999px;font-size:12px;font-weight:600;letter-spacing:.04em;margin-bottom:8px;}
+  .hero h1{margin:0 0 4px;font-size:24px;font-weight:800;}
+  .hero p{margin:0;font-size:13.5px;opacity:.92;}
+  .resetBtn{background:#fff;color:var(--brand-primary);border:none;border-radius:10px;padding:10px 18px;font-weight:700;font-size:13px;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,.12);}
+  .resetBtn:hover{background:var(--brand-light);}
+  .note{margin-top:16px;background:var(--warn-bg);border:1px solid var(--warn-border);border-radius:14px;padding:13px 18px;font-size:12.5px;line-height:1.6;color:#7a5200;}
+  .note b{color:#8a4b00;}
+  .grid{display:grid;grid-template-columns:380px 1fr;gap:20px;margin-top:20px;align-items:start;}
+  @media(max-width:960px){.grid{grid-template-columns:1fr;}}
+  .panel{background:#fff;border-radius:18px;padding:20px 22px;border:1px solid #E9F5F3;box-shadow:0 4px 14px rgba(15,118,110,.05);}
+  .panel h2{font-size:15px;font-weight:700;color:var(--brand-primary);margin:0 0 12px;}
+  .panel h3{font-size:12px;font-weight:700;color:#5b8a84;text-transform:uppercase;letter-spacing:.03em;margin:16px 0 8px;display:flex;align-items:center;gap:6px;}
+  .panel h3:first-of-type{margin-top:0;}
+  .swatch{width:9px;height:9px;border-radius:3px;display:inline-block;}
+  .field{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;}
+  .field label{font-size:12.5px;color:#365954;flex:1;}
+  .field .inputwrap{display:flex;align-items:center;gap:6px;}
+  .field input{width:100px;padding:6px 8px;border:1px solid #D7ECE9;border-radius:8px;font-family:inherit;font-size:12.5px;text-align:right;color:var(--ink);font-weight:600;background:#F8FEFD;}
+  .field input:focus{outline:2px solid var(--brand-secondary);outline-offset:1px;background:#fff;}
+  .field .unit{font-size:10.5px;color:#8aa8a4;width:48px;}
+  .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+  @media(max-width:700px){.cards{grid-template-columns:repeat(2,1fr);}}
+  .card{background:#fff;border-radius:16px;padding:16px 16px 14px;border:1px solid #E3F3F0;box-shadow:0 4px 14px rgba(15,118,110,.06);}
+  .card .label{font-size:11.5px;color:#5b8a84;font-weight:600;letter-spacing:.02em;}
+  .card .value{font-size:22px;font-weight:800;color:var(--brand-primary);margin-top:4px;}
+  .card .value.neg{color:var(--neg);}
+  .card .sub{font-size:10.5px;color:#7c9c97;margin-top:3px;}
+  .section{background:#fff;border-radius:18px;padding:20px 22px;margin-top:16px;border:1px solid #E9F5F3;box-shadow:0 4px 14px rgba(15,118,110,.05);}
+  .section h2{font-size:15px;font-weight:700;color:var(--brand-primary);margin:0 0 4px;}
+  .section .desc{font-size:12px;color:#6a8a86;margin-bottom:12px;}
+  canvas{max-height:300px;}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:4px;}
+  th,td{padding:8px 9px;text-align:right;border-bottom:1px solid #EEF6F5;}
+  th:first-child,td:first-child{text-align:left;}
+  thead th{color:#5b8a84;font-weight:700;font-size:11.5px;background:var(--brand-light);}
+  tbody tr:last-child td{font-weight:700;color:var(--brand-primary);}
+  td.neg{color:var(--neg);}
+  .footnote{font-size:11px;color:#8aa8a4;margin-top:16px;text-align:center;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <div>
+      <span class="tag">PICKLEBALL COURT · OPERATOR MODEL</span>
+      <h1>Interactive Feasibility Model</h1>
+      <p>รายได้แบบ Rate x Hours x Courts (Professional / Standard / Simulator) · ปรับ Assumptions แล้วคำนวณใหม่ทันที</p>
+    </div>
+    <button class="resetBtn" onclick="resetDefaults()">↺ รีเซ็ตเป็นค่าตั้งต้น</button>
+  </div>
+
+  <div class="note">
+    ℹ️ อ้างอิงสูตรจาก <b>Calc - Reconciled</b> ในไฟล์ Pickleball_Feasibility_Model.xlsx: รายได้ As Filed (100% utilization) × Realization Factor ต่อประเภทคอร์ท และสูตร Blended Rate / Break-Even คำนวณจากชั่วโมง-คอร์ทของ <b>Professional + Standard เท่านั้น</b> (ไม่รวม Simulator ตามไฟล์ต้นฉบับ) — ปรับ Assumptions ทางซ้ายได้เต็มที่
+  </div>
+
+  <div class="grid">
+    <!-- ASSUMPTIONS PANEL -->
+    <div class="panel">
+      <h2>Assumptions (แก้ไขได้)</h2>
+
+      <h3>CAPEX</h3>
+      <div class="field"><label>Construction Cost</label><div class="inputwrap"><input type="number" id="constructionCost" value="3000000" step="50000" oninput="recalc()"><span class="unit">THB</span></div></div>
+      <div class="field"><label>Contingency</label><div class="inputwrap"><input type="number" id="contingencyPct" value="10" step="1" oninput="recalc()"><span class="unit">%</span></div></div>
+
+      <h3>OPEX ต่อเดือน</h3>
+      <div class="field"><label>Salaries</label><div class="inputwrap"><input type="number" id="opexSalaries" value="50000" step="1000" oninput="recalc()"><span class="unit">THB/mo</span></div></div>
+      <div class="field"><label>Facilities / Utilities</label><div class="inputwrap"><input type="number" id="opexFacilities" value="80000" step="1000" oninput="recalc()"><span class="unit">THB/mo</span></div></div>
+      <div class="field"><label>Land Rent / Lease</label><div class="inputwrap"><input type="number" id="opexLandRent" value="150000" step="1000" oninput="recalc()"><span class="unit">THB/mo</span></div></div>
+      <div class="field"><label>Miscellaneous</label><div class="inputwrap"><input type="number" id="opexMisc" value="25000" step="1000" oninput="recalc()"><span class="unit">THB/mo</span></div></div>
+
+      <h3><span class="swatch" style="background:#0F766E"></span>Professional Courts</h3>
+      <div class="field"><label>Hourly Rate</label><div class="inputwrap"><input type="number" id="profRate" value="700" step="10" oninput="recalc()"><span class="unit">THB/hr</span></div></div>
+      <div class="field"><label>Utilization</label><div class="inputwrap"><input type="number" id="profHours" value="6" step="0.5" oninput="recalc()"><span class="unit">hrs/day</span></div></div>
+      <div class="field"><label>Number of Courts</label><div class="inputwrap"><input type="number" id="profCourts" value="3" step="1" oninput="recalc()"><span class="unit">courts</span></div></div>
+      <div class="field"><label>Realization Factor (Reconciled)</label><div class="inputwrap"><input type="number" id="realProf" value="75" step="1" oninput="recalc()"><span class="unit">%</span></div></div>
+
+      <h3><span class="swatch" style="background:#14B8A6"></span>Standard Courts</h3>
+      <div class="field"><label>Hourly Rate</label><div class="inputwrap"><input type="number" id="stdRate" value="400" step="10" oninput="recalc()"><span class="unit">THB/hr</span></div></div>
+      <div class="field"><label>Utilization</label><div class="inputwrap"><input type="number" id="stdHours" value="6" step="0.5" oninput="recalc()"><span class="unit">hrs/day</span></div></div>
+      <div class="field"><label>Number of Courts</label><div class="inputwrap"><input type="number" id="stdCourts" value="2" step="1" oninput="recalc()"><span class="unit">courts</span></div></div>
+      <div class="field"><label>Realization Factor (Reconciled)</label><div class="inputwrap"><input type="number" id="realStd" value="65" step="1" oninput="recalc()"><span class="unit">%</span></div></div>
+
+      <h3><span class="swatch" style="background:#5EEAD4"></span>Simulator Courts</h3>
+      <div class="field"><label>Hourly Rate</label><div class="inputwrap"><input type="number" id="simRate" value="300" step="10" oninput="recalc()"><span class="unit">THB/hr</span></div></div>
+      <div class="field"><label>Utilization</label><div class="inputwrap"><input type="number" id="simHours" value="6" step="0.5" oninput="recalc()"><span class="unit">hrs/day</span></div></div>
+      <div class="field"><label>Number of Courts</label><div class="inputwrap"><input type="number" id="simCourts" value="2" step="1" oninput="recalc()"><span class="unit">courts</span></div></div>
+      <div class="field"><label>Realization Factor (Reconciled)</label><div class="inputwrap"><input type="number" id="realSim" value="50" step="1" oninput="recalc()"><span class="unit">%</span></div></div>
+
+      <h3>อื่นๆ</h3>
+      <div class="field"><label>Days per Month</label><div class="inputwrap"><input type="number" id="daysPerMonth" value="30" step="1" oninput="recalc()"><span class="unit">days</span></div></div>
+      <div class="field"><label>Months per Year</label><div class="inputwrap"><input type="number" id="monthsPerYear" value="12" step="1" oninput="recalc()"><span class="unit">months</span></div></div>
+      <div class="field"><label>Discount Rate (WACC)</label><div class="inputwrap"><input type="number" id="discountRate" value="10" step="0.5" oninput="recalc()"><span class="unit">%/yr</span></div></div>
+      <div class="field"><label>Projection Horizon</label><div class="inputwrap"><input type="number" id="horizonYears" value="5" min="1" max="15" step="1" oninput="recalc()"><span class="unit">years</span></div></div>
+    </div>
+
+    <!-- RESULTS -->
+    <div>
+      <div class="cards">
+        <div class="card"><div class="label">NPV</div><div class="value" id="kpiNPV">-</div><div class="sub" id="kpiNPVsub">-</div></div>
+        <div class="card"><div class="label">IRR</div><div class="value" id="kpiIRR">-</div><div class="sub">Discount Rate: <span id="kpiDiscRate">-</span></div></div>
+        <div class="card"><div class="label">Payback Period</div><div class="value" id="kpiPayback">-</div><div class="sub" id="kpiPaybackSub">-</div></div>
+        <div class="card"><div class="label">Total CAPEX</div><div class="value" id="kpiCapex">-</div><div class="sub" id="kpiCapexSub">-</div></div>
+      </div>
+
+      <div class="section">
+        <h2>Daily Revenue by Court Type (As Filed vs Reconciled)</h2>
+        <div class="desc">As Filed = 100% utilization ตามที่ระบุ · Reconciled = As Filed × Realization Factor</div>
+        <table>
+          <thead><tr><th>ประเภทคอร์ท</th><th>Rate/hr</th><th>ชม./วัน</th><th>คอร์ท</th><th>As Filed (THB/day)</th><th>Realization</th><th>Reconciled (THB/day)</th></tr></thead>
+          <tbody id="courtTableBody"></tbody>
+        </table>
+      </div>
+
+      <div class="section">
+        <h2>Monthly / Annual P&amp;L (Reconciled)</h2>
+        <table>
+          <thead><tr><th>รายการ</th><th>Monthly</th><th>Annual</th></tr></thead>
+          <tbody>
+            <tr><td>Gross Revenue</td><td id="pnlGrossM">-</td><td id="pnlGrossA">-</td></tr>
+            <tr><td>OPEX</td><td id="pnlOpexM">-</td><td id="pnlOpexA">-</td></tr>
+            <tr><td>Net Profit / EBITDA</td><td id="pnlNetM">-</td><td id="pnlNetA">-</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="cards" style="margin-top:16px;">
+        <div class="card"><div class="label">EBITDA Margin</div><div class="value" id="kpiMargin">-</div></div>
+        <div class="card"><div class="label">ROI (Year 1)</div><div class="value" id="kpiROI">-</div></div>
+        <div class="card"><div class="label">Blended Rate/hr</div><div class="value" id="kpiBlended">-</div><div class="sub">Prof+Std hours only</div></div>
+        <div class="card"><div class="label">Break-Even Utilization</div><div class="value" id="kpiBEUtil">-</div><div class="sub" id="kpiBEUtilSub">-</div></div>
+      </div>
+
+      <div class="section">
+        <h2>กระแสเงินสด &amp; NPV Path</h2>
+        <div class="desc">แท่ง = กระแสเงินสดรายปี (nominal) · เส้น = กระแสเงินสดคิดลดสะสม (จุดตัดศูนย์ = payback ที่แท้จริงตาม NPV)</div>
+        <canvas id="cfChart"></canvas>
+      </div>
+
+      <div class="section">
+        <h2>ตารางกระแสเงินสด (THB)</h2>
+        <div style="overflow-x:auto;"><table id="cfTable"><thead></thead><tbody></tbody></table></div>
+      </div>
+
+      <div class="section">
+        <h2>Sensitivity: Utilization Realization ทั้งระบบ vs Returns</h2>
+        <div class="desc">ปรับสัดส่วน utilization รวมทุกคอร์ท (100% = Total Daily Revenue Reconciled ปัจจุบัน) เพื่อดูผลกระทบต่อผลตอบแทน</div>
+        <table>
+          <thead><tr><th>Utilization %</th><th>Monthly Net (THB)</th><th>Annual EBITDA (THB)</th><th>ROI Yr1 %</th><th>Payback (mo)</th></tr></thead>
+          <tbody id="sensTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="footnote">Interactive model อ้างอิงโครงสร้างจาก Pickleball_Feasibility_Model.xlsx (Scenario: Reconciled) · ไม่รวม growth รายได้ / ภาษี / ดอกเบี้ย / ค่าเสื่อม · IRR คำนวณด้วย bisection method</div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const num = id => parseFloat($(id).value) || 0;
+
+const DEFAULTS = {
+  constructionCost:3000000, contingencyPct:10,
+  opexSalaries:50000, opexFacilities:80000, opexLandRent:150000, opexMisc:25000,
+  profRate:700, profHours:6, profCourts:3, realProf:75,
+  stdRate:400, stdHours:6, stdCourts:2, realStd:65,
+  simRate:300, simHours:6, simCourts:2, realSim:50,
+  daysPerMonth:30, monthsPerYear:12, discountRate:10, horizonYears:5
+};
+
+function resetDefaults(){
+  Object.entries(DEFAULTS).forEach(([id,v]) => $(id).value = v);
+  recalc();
+}
+
+function fmtTHB(v, dec=0){
+  if(v===null || v===undefined || isNaN(v)) return '-';
+  const neg = v < 0;
+  const s = Math.abs(v).toLocaleString('en-US',{minimumFractionDigits:dec, maximumFractionDigits:dec});
+  return (neg ? '('+s+')' : s);
+}
+function fmtM(v){
+  if(v===null || v===undefined || isNaN(v)) return '-';
+  return (v<0?'-':'') + '฿' + (Math.abs(v)/1e6).toFixed(2) + 'M';
+}
+function fmtPct(v, dec=1){
+  if(v===null || v===undefined || isNaN(v)) return '-';
+  return (v*100).toFixed(dec)+'%';
+}
+
+function npvAt(rate, cfs){ return cfs.reduce((acc,cf,i)=>acc+cf/Math.pow(1+rate,i),0); }
+function calcIRR(cfs){
+  const hasPos = cfs.some(c=>c>0), hasNeg = cfs.some(c=>c<0);
+  if(!hasPos || !hasNeg) return null;
+  let low=-0.9999, high=100;
+  let fLow=npvAt(low,cfs), fHigh=npvAt(high,cfs);
+  if(fLow*fHigh>0) return null;
+  let mid=0;
+  for(let i=0;i<200;i++){
+    mid=(low+high)/2;
+    const fMid=npvAt(mid,cfs);
+    if(Math.abs(fMid)<1e-6) break;
+    if((fLow<0 && fMid<0) || (fLow>0 && fMid>0)){ low=mid; fLow=fMid; } else { high=mid; }
+  }
+  return mid;
+}
+
+let chart;
+
+function recalc(){
+  const constructionCost = num('constructionCost');
+  const contingency = num('contingencyPct')/100;
+  const opex = num('opexSalaries')+num('opexFacilities')+num('opexLandRent')+num('opexMisc');
+
+  const profRate=num('profRate'), profHours=num('profHours'), profCourts=num('profCourts'), realProf=num('realProf')/100;
+  const stdRate=num('stdRate'), stdHours=num('stdHours'), stdCourts=num('stdCourts'), realStd=num('realStd')/100;
+  const simRate=num('simRate'), simHours=num('simHours'), simCourts=num('simCourts'), realSim=num('realSim')/100;
+
+  const daysPerMonth = num('daysPerMonth');
+  const monthsPerYear = num('monthsPerYear');
+  const discRate = num('discountRate')/100;
+  const horizon = Math.max(1, Math.min(15, Math.round(num('horizonYears'))));
+
+  const totalCapex = constructionCost*(1+contingency);
+
+  const profAsFiled = profRate*profHours*profCourts;
+  const stdAsFiled = stdRate*stdHours*stdCourts;
+  const simAsFiled = simRate*simHours*simCourts;
+
+  const profRec = profAsFiled*realProf;
+  const stdRec = stdAsFiled*realStd;
+  const simRec = simAsFiled*realSim;
+  const totalDailyRec = profRec+stdRec+simRec;
+
+  const monthlyGross = totalDailyRec*daysPerMonth;
+  const monthlyNet = monthlyGross-opex;
+  const annualGross = monthlyGross*monthsPerYear;
+  const annualOpex = opex*monthsPerYear;
+  const annualEBITDA = annualGross-annualOpex;
+  const ebitdaMargin = annualGross!==0 ? annualEBITDA/annualGross : null;
+  const roiY1 = totalCapex!==0 ? annualEBITDA/totalCapex : null;
+  const paybackMonths = monthlyNet>0 ? totalCapex/monthlyNet : null;
+  const paybackYears = paybackMonths!==null ? paybackMonths/12 : null;
+
+  const dailyNeededBE = daysPerMonth!==0 ? opex/daysPerMonth : null;
+  const proStdHours = (profHours*profCourts)+(stdHours*stdCourts);
+  const blendedRate = proStdHours!==0 ? totalDailyRec/proStdHours : null;
+  const beHoursTotal = (blendedRate && blendedRate!==0) ? dailyNeededBE/blendedRate : null;
+  const proStdCourts = profCourts+stdCourts;
+  const beHoursPerCourt = (beHoursTotal!==null && proStdCourts!==0) ? beHoursTotal/proStdCourts : null;
+  const utilNeededBE = (beHoursPerCourt!==null && profHours!==0) ? beHoursPerCourt/profHours : null;
+
+  // court table
+  const rows = [
+    ['Professional', profRate, profHours, profCourts, profAsFiled, realProf, profRec],
+    ['Standard', stdRate, stdHours, stdCourts, stdAsFiled, realStd, stdRec],
+    ['Simulator', simRate, simHours, simCourts, simAsFiled, realSim, simRec]
+  ];
+  $('courtTableBody').innerHTML = rows.map(r =>
+    '<tr><td>'+r[0]+'</td><td>'+fmtTHB(r[1])+'</td><td>'+r[2]+'</td><td>'+r[3]+'</td><td>'+fmtTHB(r[4])+'</td><td>'+(r[5]*100).toFixed(0)+'%</td><td>'+fmtTHB(r[6])+'</td></tr>'
+  ).join('') + '<tr><td>Total</td><td></td><td></td><td></td><td>'+fmtTHB(profAsFiled+stdAsFiled+simAsFiled)+'</td><td></td><td>'+fmtTHB(totalDailyRec)+'</td></tr>';
+
+  $('kpiCapex').textContent = fmtM(totalCapex);
+  $('kpiCapexSub').textContent = fmtTHB(constructionCost)+' + '+(contingency*100).toFixed(0)+'%';
+
+  $('pnlGrossM').textContent = fmtTHB(monthlyGross);
+  $('pnlGrossA').textContent = fmtTHB(annualGross);
+  $('pnlOpexM').textContent = fmtTHB(opex);
+  $('pnlOpexA').textContent = fmtTHB(annualOpex);
+  $('pnlNetM').textContent = fmtTHB(monthlyNet);
+  $('pnlNetA').textContent = fmtTHB(annualEBITDA);
+
+  $('kpiMargin').textContent = fmtPct(ebitdaMargin);
+  $('kpiROI').textContent = fmtPct(roiY1);
+  $('kpiBlended').textContent = blendedRate===null ? '-' : '฿'+fmtTHB(blendedRate);
+  $('kpiBEUtil').textContent = utilNeededBE===null ? '-' : fmtPct(utilNeededBE);
+  $('kpiBEUtilSub').textContent = beHoursTotal===null ? '-' : beHoursTotal.toFixed(1)+' ชม./วัน ทุกคอร์ท (Prof+Std)';
+
+  const cashFlows = [-totalCapex];
+  for(let y=1;y<=horizon;y++) cashFlows.push(annualEBITDA);
+  const discountedCFs = cashFlows.map((cf,i)=>cf/Math.pow(1+discRate,i));
+  const npv = discountedCFs.reduce((a,b)=>a+b,0);
+  const irr = calcIRR(cashFlows);
+
+  $('kpiNPV').textContent = fmtM(npv);
+  $('kpiNPV').className = 'value' + (npv<0?' neg':'');
+  $('kpiNPVsub').textContent = fmtTHB(npv)+' THB';
+  $('kpiIRR').textContent = irr===null ? '-' : fmtPct(irr);
+  $('kpiDiscRate').textContent = (discRate*100).toFixed(1)+'%';
+
+  $('kpiPayback').textContent = paybackMonths===null ? 'ไม่คุ้มทุน' : paybackMonths.toFixed(1)+' เดือน';
+  $('kpiPayback').className = 'value' + (paybackMonths===null?' neg':'');
+  $('kpiPaybackSub').textContent = paybackYears===null ? 'Net Profit ≤ 0' : '≈ '+paybackYears.toFixed(2)+' ปี';
+
+  const cumulative = [];
+  discountedCFs.reduce((acc,v,i)=>{ const s=acc+v; cumulative[i]=s; return s; }, 0);
+  const years = cashFlows.map((_,i)=>'Year '+i);
+
+  if(!chart){
+    chart = new Chart($('cfChart'), {
+      data:{ labels: years, datasets:[
+        { type:'bar', label:'Cash Flow รายปี (Nominal)', data: cashFlows,
+          backgroundColor: cashFlows.map(v=> v<0 ? '#F5B942' : '#5EEAD4'), borderRadius:8, order:2 },
+        { type:'line', label:'กระแสเงินสดคิดลดสะสม (NPV path)', data: cumulative,
+          borderColor:'#0F766E', backgroundColor:'#0F766E', tension:.3, pointRadius:5,
+          pointBackgroundColor:'#0F766E', borderWidth:3, order:1 }
+      ]},
+      options:{
+        responsive:true,
+        plugins:{
+          legend:{ position:'bottom', labels:{ font:{ family:'Noto Sans Thai' } } },
+          tooltip:{ callbacks:{ label: ctx => ctx.dataset.label+': ฿'+Math.round(ctx.parsed.y).toLocaleString() } }
+        },
+        scales:{
+          y:{ ticks:{ callback: v => '฿'+(v/1e6).toFixed(1)+'M' }, grid:{ color:'#EEF6F5' } },
+          x:{ grid:{ display:false } }
+        }
+      }
+    });
+  } else {
+    chart.data.labels = years;
+    chart.data.datasets[0].data = cashFlows;
+    chart.data.datasets[0].backgroundColor = cashFlows.map(v=> v<0 ? '#F5B942' : '#5EEAD4');
+    chart.data.datasets[1].data = cumulative;
+    chart.update();
+  }
+
+  // table
+  const thead = $('cfTable').querySelector('thead');
+  const tbody = $('cfTable').querySelector('tbody');
+  thead.innerHTML = '<tr><th>Year</th>'+years.map(y=>'<th>'+y.replace('Year ','')+'</th>').join('')+'</tr>';
+  const rowHTML = (label, arr) => '<tr><td>'+label+'</td>'+arr.map(v=>'<td class="'+(v<0?'neg':'')+'">'+fmtTHB(v)+'</td>').join('')+'</tr>';
+  tbody.innerHTML = rowHTML('Cash Flow (Nominal)', cashFlows) + rowHTML('Discounted CF', discountedCFs) + rowHTML('Cumulative Discounted CF', cumulative);
+
+  // sensitivity table (utilization % of Reconciled total)
+  const sensLevels = [1,0.9,0.8,0.7,0.63,0.6,0.5,0.4,0.3];
+  $('sensTableBody').innerHTML = sensLevels.map(u => {
+    const mNet = totalDailyRec*u*daysPerMonth - opex;
+    const aEbitda = mNet*12;
+    const roi = totalCapex!==0 ? aEbitda/totalCapex : null;
+    const pb = mNet>0 ? totalCapex/mNet : null;
+    return '<tr><td>'+(u*100).toFixed(0)+'%</td><td class="'+(mNet<0?'neg':'')+'">'+fmtTHB(mNet)+'</td><td class="'+(aEbitda<0?'neg':'')+'">'+fmtTHB(aEbitda)+'</td><td>'+(roi===null?'-':fmtPct(roi))+'</td><td>'+(pb===null?'-':pb.toFixed(1))+'</td></tr>';
+  }).join('');
+}
+
+recalc();
+</script>
+</body>
+</html>
